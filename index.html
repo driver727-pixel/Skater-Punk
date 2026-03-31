@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skater-Punk Card Forge Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="page-header">
+        <div class="hero-copy">
+          <p class="eyebrow">Skater-Punk prototype</p>
+          <h1>Card Forge</h1>
+          <p class="page-copy">
+            Generate a seeded Electric Skateboarder card from a handful of
+            inputs, reroll only the parts you want, and save local deck ideas
+            while the broader game takes shape.
+          </p>
+        </div>
+        <div class="hero-note">
+          <strong>Prototype goal</strong>
+          <span>
+            Fast, deterministic card generation with a readable 2D preview and
+            exportable mock output.
+          </span>
+        </div>
+      </header>
+
+      <main class="layout">
+        <aside class="panel controls-panel">
+          <div class="panel-header">
+            <h2>Forge inputs</h2>
+            <p>These values feed the deterministic generator.</p>
+          </div>
+
+          <form id="forge-form" class="forge-form">
+            <label class="field">
+              <span>Archetype</span>
+              <select id="archetype-input" name="archetype"></select>
+            </label>
+
+            <label class="field">
+              <span>Rarity</span>
+              <select id="rarity-input" name="rarity"></select>
+            </label>
+
+            <label class="field">
+              <span>Style vibe</span>
+              <select id="vibe-input" name="vibe"></select>
+            </label>
+
+            <label class="field">
+              <span>Personality tag</span>
+              <select id="personality-input" name="personality"></select>
+            </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span>Accent color</span>
+                <input
+                  id="accent-input"
+                  name="accent"
+                  type="color"
+                  value="#00c2ff"
+                />
+              </label>
+
+              <label class="field grow">
+                <span>Base seed</span>
+                <input
+                  id="seed-input"
+                  name="seed"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+              </label>
+            </div>
+
+            <div class="button-grid top-buttons">
+              <button id="generate-button" class="primary-button" type="submit">
+                Generate card
+              </button>
+              <button
+                id="random-seed-button"
+                class="secondary-button"
+                type="button"
+              >
+                New seed
+              </button>
+            </div>
+          </form>
+
+          <section class="control-block">
+            <div class="panel-header compact">
+              <h3>Locks</h3>
+              <p>Keep favorite sections stable during rerolls.</p>
+            </div>
+            <div class="lock-grid">
+              <label class="toggle-chip">
+                <input id="lock-name" type="checkbox" />
+                <span>Name + identity</span>
+              </label>
+              <label class="toggle-chip">
+                <input id="lock-visuals" type="checkbox" />
+                <span>Visuals</span>
+              </label>
+              <label class="toggle-chip">
+                <input id="lock-stats" type="checkbox" />
+                <span>Stats</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="control-block">
+            <div class="panel-header compact">
+              <h3>Rerolls</h3>
+              <p>Each reroll increments one deterministic seed channel.</p>
+            </div>
+            <div class="button-grid">
+              <button
+                id="reroll-all-button"
+                class="secondary-button"
+                type="button"
+              >
+                Reroll all
+              </button>
+              <button
+                id="reroll-name-button"
+                class="secondary-button"
+                type="button"
+              >
+                Reroll name
+              </button>
+              <button
+                id="reroll-visuals-button"
+                class="secondary-button"
+                type="button"
+              >
+                Reroll visuals
+              </button>
+              <button
+                id="reroll-stats-button"
+                class="secondary-button"
+                type="button"
+              >
+                Reroll stats
+              </button>
+            </div>
+          </section>
+
+          <section class="control-block">
+            <div class="panel-header compact">
+              <h3>Actions</h3>
+              <p>Save variants, export the preview, or inspect the live seed.</p>
+            </div>
+            <div class="button-grid">
+              <button id="save-button" class="primary-button" type="button">
+                Save to collection
+              </button>
+              <button id="export-button" class="secondary-button" type="button">
+                Export PNG
+              </button>
+            </div>
+          </section>
+
+          <section class="control-block">
+            <div class="panel-header compact">
+              <h3>Generator state</h3>
+              <p id="status-message" class="status-message">
+                Card Forge ready.
+              </p>
+            </div>
+            <dl id="generator-state" class="state-list"></dl>
+          </section>
+        </aside>
+
+        <section class="preview-column">
+          <section class="panel preview-panel">
+            <div class="panel-header">
+              <h2>Card preview</h2>
+              <p>Rendered as inline SVG for crisp previews and PNG export.</p>
+            </div>
+            <div id="card-preview" class="card-preview" aria-live="polite"></div>
+          </section>
+
+          <section class="panel details-panel">
+            <div class="panel-header">
+              <h2>Generated profile</h2>
+              <p>
+                Structured output ready to evolve into deck-building and route
+                systems.
+              </p>
+            </div>
+            <div id="profile-summary" class="profile-summary"></div>
+            <pre id="card-json" class="card-json"></pre>
+          </section>
+        </section>
+      </main>
+
+      <section class="panel collection-panel">
+        <div class="collection-header">
+          <div class="panel-header">
+            <h2>Saved collection</h2>
+            <p>
+              Stored in localStorage so you can assemble a rough deck during
+              prototyping.
+            </p>
+          </div>
+          <div class="collection-actions">
+            <span id="collection-count" class="collection-count"></span>
+            <button
+              id="clear-collection-button"
+              class="text-button"
+              type="button"
+            >
+              Clear collection
+            </button>
+          </div>
+        </div>
+        <div id="collection-list" class="collection-list"></div>
+      </section>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
