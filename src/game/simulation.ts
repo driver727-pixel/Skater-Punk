@@ -8,6 +8,9 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 const addNotification = (state: GameState, message: string) => {
+  if (state.notifications[0] === message) {
+    return;
+  }
   state.notifications = [message, ...state.notifications].slice(0, 8);
 };
 
@@ -222,6 +225,9 @@ export const getSquadSummary = (state: GameState): SquadSummary => ({
 
 export const addCreatedCard = (source: GameState, card: CharacterCard): GameState => {
   const state = structuredClone(source);
+  if (state.createdCards.some((existing) => existing.id === card.id)) {
+    return state;
+  }
   state.createdCards = [...state.createdCards, card];
   addNotification(state, `Character card created: ${card.handle} (${card.rarity}).`);
   return state;
