@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { CSSProperties } from "react";
 import type { CharacterCard } from "../types";
 import { RARITY_FRAME_COLORS } from "../generator/tables";
@@ -20,6 +21,13 @@ const slugLabel = (value: string) =>
     .split("-")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+
+const escapeAttr = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 
 const hashValue = (value: string) => {
   let hash = 0;
@@ -118,7 +126,7 @@ const createArtSvg = (card: CharacterCard) => {
   const emblemPhase = hashValue(card.visual.emblem) % 90;
 
   return `
-    <svg viewBox="0 0 360 500" role="img" xmlns="http://www.w3.org/2000/svg" aria-label="${card.name} character card art">
+    <svg viewBox="0 0 360 500" role="img" xmlns="http://www.w3.org/2000/svg" aria-label="${escapeAttr(card.name)} character card art">
       <defs>
         <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="${palette.base}" />
@@ -180,7 +188,7 @@ const createArtSvg = (card: CharacterCard) => {
 export function CharacterCardPreview({ card }: CharacterCardPreviewProps) {
   const frameColor = RARITY_FRAME_COLORS[card.rarity];
   const palette = backgroundPalette(card.prompts.accentColor, card.district);
-  const artSvg = createArtSvg(card);
+  const artSvg = useMemo(() => createArtSvg(card), [card]);
 
   return (
     <article className="panel forge-preview-shell">

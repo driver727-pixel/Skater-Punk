@@ -159,7 +159,7 @@ function App() {
     return advanceState(initial);
   });
   const [selectedSkaterId, setSelectedSkaterId] = useState<string>(
-    () => loadState().skaters[0]?.id ?? "",
+    () => state.skaters[0]?.id ?? "",
   );
   const [toast, setToast] = useState(
     "Rewarded boosts use a browser mock on web and can be replaced with a Google AdMob rewarded adapter on Android.",
@@ -448,8 +448,8 @@ function App() {
         <div>
           <h3>Dispatch feed</h3>
           <ul className="economy-list">
-            {state.notifications.slice(0, 4).map((note) => (
-              <li key={note}>{note}</li>
+            {state.notifications.slice(0, 4).map((note, index) => (
+              <li key={`${index}-${note.slice(0, 40)}`}>{note}</li>
             ))}
           </ul>
         </div>
