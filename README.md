@@ -4,3 +4,4 @@ Grand Vision  Web/Android based. I am building an 80s/90s cyberpunk delivery gam
 ## Design docs
 
 - [Electric Skateboarder Card Creation System](docs/card-creation-system.md)
+- [Character Card Creator Implementation Path](docs/character-card-creator-path.md)

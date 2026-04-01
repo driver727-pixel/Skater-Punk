@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { CardForgeRoadmap } from "./features/card-forge/CardForgeRoadmap";
 import { createAdService } from "./game/ads";
 import {
   DISTRICT_CARDS,
@@ -237,6 +238,8 @@ function App() {
     updateState(nextState, result.detail);
   };
 
+  const isForgeScreen = screen === "forge";
+
   return (
     <div className="app-shell">
       <header className="panel hero">
@@ -270,34 +273,35 @@ function App() {
       </header>
 
       <nav className="tabs" aria-label="Game screens">
-        {(["map", "cards", "garage"] as Screen[]).map((tab) => (
+        {(["map", "cards", "garage", "forge"] as Screen[]).map((tab) => (
           <button key={tab} className={`tab ${screen === tab ? "active" : ""}`} onClick={() => setScreen(tab)}>
             {tab}
           </button>
         ))}
       </nav>
 
-      <main className="layout">
-        <section className="column">
-          <div className="section-heading">
-            <h2>Squad</h2>
-            <p>{state.skaters.length} of 6 skateboarders unlocked</p>
-          </div>
-          <div className="stack">
-            {state.skaters.map((skater) => (
-              <RiderCard
-                key={skater.id}
-                skater={skater}
-                route={getRouteById(state.routes, skater.routeId)}
-                selected={selectedSkater?.id === skater.id}
-                onSelect={() => setSelectedSkaterId(skater.id)}
-                onRecharge={() => void handleReward(skater.id, "instant-recharge")}
-                onRepair={() => void handleReward(skater.id, "emergency-repair")}
-              />
-            ))}
-          </div>
-        </section>
-
+      <main className={`layout ${isForgeScreen ? "layout-wide" : ""}`}>
+        {!isForgeScreen && (
+          <section className="column">
+            <div className="section-heading">
+              <h2>Squad</h2>
+              <p>{state.skaters.length} of 6 skateboarders unlocked</p>
+            </div>
+            <div className="stack">
+              {state.skaters.map((skater) => (
+                <RiderCard
+                  key={skater.id}
+                  skater={skater}
+                  route={getRouteById(state.routes, skater.routeId)}
+                  selected={selectedSkater?.id === skater.id}
+                  onSelect={() => setSelectedSkaterId(skater.id)}
+                  onRecharge={() => void handleReward(skater.id, "instant-recharge")}
+                  onRepair={() => void handleReward(skater.id, "emergency-repair")}
+                />
+              ))}
+            </div>
+          </section>
+        )}
         <section className="column">
           {screen === "map" && (
             <>
@@ -436,6 +440,8 @@ function App() {
               </div>
             </>
           )}
+
+          {screen === "forge" && <CardForgeRoadmap />}
         </section>
       </main>
 
