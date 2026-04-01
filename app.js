@@ -220,6 +220,29 @@ const DISTRICT_DIFFICULTY = {
   "ember-docks": { label: "Ember Docks", risk: 1.25, credits: 245 },
 };
 
+const ROUTE_ROLES = {
+  lead: {
+    label: "Lead rider",
+    short: "Lead",
+    description: "Pushes route speed and overall momentum.",
+  },
+  scout: {
+    label: "Scout",
+    short: "Scout",
+    description: "Finds shortcuts and reduces district risk.",
+  },
+  tech: {
+    label: "Tech support",
+    short: "Tech",
+    description: "Stabilizes signal problems and board failures.",
+  },
+  cargo: {
+    label: "Cargo runner",
+    short: "Cargo",
+    description: "Protects payload value and payout.",
+  },
+};
+
 const ui = {
   forgeForm: document.querySelector("#forge-form"),
   archetypeInput: document.querySelector("#archetype-input"),
@@ -265,6 +288,9 @@ const ui = {
   completedRoutes: document.querySelector("#completed-routes"),
   earnedCredits: document.querySelector("#earned-credits"),
   routeInput: document.querySelector("#route-input"),
+  routePrepSummary: document.querySelector("#route-prep-summary"),
+  routePrepList: document.querySelector("#route-prep-list"),
+  resetRoutePrepButton: document.querySelector("#reset-route-prep"),
   launchRouteButton: document.querySelector("#launch-route"),
   routeProgressLabel: document.querySelector("#route-progress-label"),
   routeProgressBar: document.querySelector("#route-progress-bar"),
@@ -281,6 +307,10 @@ const state = {
   earnedCredits: 0,
   missionLog: [],
   routeRun: null,
+  routePrep: {
+    selectedIds: [],
+    roles: {},
+  },
   cardCounter: 1,
   routeTimer: null,
 };
@@ -518,6 +548,104 @@ function renderGarage() {
   });
 }
 
+function getPreparedRiders() {
+  return state.routePrep.selectedIds
+    .map((id) => state.garage.find((card) => card.id === id))
+    .filter(Boolean);
+}
+
+function getAssignedRole(cardId) {
+  return Object.entries(state.routePrep.roles).find(([, riderId]) => riderId === cardId)?.[0] ?? null;
+}
+
+function roleTagMarkup(cardId) {
+  const role = getAssignedRole(cardId);
+  if (!role) {
+    return '<span class="prep-role-tag muted">No role</span>';
+  }
+
+  return `<span class="prep-role-tag">${ROUTE_ROLES[role].short}</span>`;
+}
+
+function renderRoutePrep() {
+  ui.routePrepList.innerHTML = "";
+
+  if (!state.garage.length) {
+    ui.routePrepSummary.innerHTML = `
+      <div class="empty-state">
+        Save riders to the garage, then choose up to four for the next route.
+      </div>
+    `;
+    ui.routePrepList.innerHTML = "";
+    return;
+  }
+
+  const selectedCount = state.routePrep.selectedIds.length;
+  ui.routePrepSummary.innerHTML = `
+    <div class="prep-summary-card">
+      <span class="stat-label">Selected crew</span>
+      <strong>${selectedCount} / 4 riders</strong>
+    </div>
+    <div class="prep-summary-card">
+      <span class="stat-label">Assigned roles</span>
+      <strong>${Object.keys(state.routePrep.roles).length} / 4</strong>
+    </div>
+  `;
+
+  state.garage.forEach((card) => {
+    const isSelected = state.routePrep.selectedIds.includes(card.id);
+    const assignedRole = getAssignedRole(card.id);
+    const element = document.createElement("article");
+    element.className = `prep-card ${isSelected ? "selected" : ""}`;
+    element.innerHTML = `
+      <div class="prep-card-top">
+        <div>
+          <span class="garage-tag">${card.rarity} ${card.archetype}</span>
+          <h3>${card.name}</h3>
+          <p class="garage-meta">${card.crew}</p>
+        </div>
+        ${roleTagMarkup(card.id)}
+      </div>
+      <div class="mini-stats">
+        <span>SPD ${card.stats.speed}</span>
+        <span>CTRL ${card.stats.control}</span>
+        <span>TECH ${card.stats.tech}</span>
+        <span>CRG ${card.stats.cargo}</span>
+      </div>
+      <div class="prep-actions">
+        <button
+          class="${isSelected ? "secondary-button" : "primary-button"} small-action"
+          data-route-action="${isSelected ? "remove" : "select"}"
+          data-id="${card.id}"
+          type="button"
+        >
+          ${isSelected ? "Remove" : "Select"}
+        </button>
+      </div>
+      <div class="role-grid">
+        ${Object.entries(ROUTE_ROLES)
+          .map(
+            ([roleKey, role]) => `
+              <button
+                class="role-button ${assignedRole === roleKey ? "active" : ""}"
+                data-route-action="assign-role"
+                data-id="${card.id}"
+                data-role="${roleKey}"
+                type="button"
+                ${!isSelected ? "disabled" : ""}
+              >
+                <strong>${role.short}</strong>
+                <span>${role.description}</span>
+              </button>
+            `,
+          )
+          .join("")}
+      </div>
+    `;
+    ui.routePrepList.appendChild(element);
+  });
+}
+
 function renderMissionLog() {
   ui.missionLog.innerHTML = "";
 
@@ -586,6 +714,7 @@ function saveState() {
       completedRoutes: state.completedRoutes,
       earnedCredits: state.earnedCredits,
       missionLog: state.missionLog.slice(-24),
+      routePrep: state.routePrep,
       cardCounter: state.cardCounter,
       currentCard: state.currentCard,
     }),
@@ -605,6 +734,7 @@ function loadState() {
     state.completedRoutes = parsed.completedRoutes ?? 0;
     state.earnedCredits = parsed.earnedCredits ?? 0;
     state.missionLog = parsed.missionLog ?? [];
+    state.routePrep = parsed.routePrep ?? { selectedIds: [], roles: {} };
     state.cardCounter = parsed.cardCounter ?? 1;
     state.currentCard = parsed.currentCard ?? null;
   } catch (error) {
@@ -634,9 +764,111 @@ function garageTotals() {
   );
 }
 
+function preparedTotals(riders) {
+  return riders.reduce(
+    (totals, rider) => {
+      totals.speed += rider.stats.speed;
+      totals.control += rider.stats.control;
+      totals.power += rider.stats.power;
+      totals.cargo += rider.stats.cargo;
+      totals.tech += rider.stats.tech;
+      totals.style += rider.stats.style;
+      return totals;
+    },
+    { speed: 0, control: 0, power: 0, cargo: 0, tech: 0, style: 0 },
+  );
+}
+
+function routePrepMetrics() {
+  const riders = getPreparedRiders();
+  if (!riders.length) {
+    renderMetrics([
+      { label: "Selected crew", value: "0" },
+      { label: "Assigned roles", value: "0" },
+      { label: "District risk", value: DISTRICT_DIFFICULTY[ui.routeInput.value].risk.toFixed(2) },
+      { label: "Projected payout", value: "0 credits" },
+    ]);
+    return;
+  }
+
+  const district = DISTRICT_DIFFICULTY[ui.routeInput.value];
+  const totals = preparedTotals(riders);
+  const roleCount = Object.keys(state.routePrep.roles).length;
+  const projected = Math.round(
+    district.credits *
+      (1 + riders.length * 0.08) *
+      (1 + totals.cargo * 0.015) *
+      (1 + roleCount * 0.04),
+  );
+
+  renderMetrics([
+    { label: "Selected crew", value: String(riders.length) },
+    { label: "Assigned roles", value: `${roleCount} / 4` },
+    { label: "District risk", value: district.risk.toFixed(2) },
+    { label: "Projected payout", value: `${projected} credits` },
+  ]);
+}
+
+function cleanRoutePrep() {
+  const garageIds = new Set(state.garage.map((card) => card.id));
+  state.routePrep.selectedIds = state.routePrep.selectedIds.filter((id) => garageIds.has(id)).slice(0, 4);
+  state.routePrep.roles = Object.fromEntries(
+    Object.entries(state.routePrep.roles).filter(([, riderId]) => garageIds.has(riderId)),
+  );
+}
+
+function resetRoutePrep() {
+  state.routePrep = {
+    selectedIds: [],
+    roles: {},
+  };
+  renderRoutePrep();
+  routePrepMetrics();
+  saveState();
+}
+
+function toggleRoutePrepSelection(id) {
+  const isSelected = state.routePrep.selectedIds.includes(id);
+  if (isSelected) {
+    state.routePrep.selectedIds = state.routePrep.selectedIds.filter((entry) => entry !== id);
+    state.routePrep.roles = Object.fromEntries(
+      Object.entries(state.routePrep.roles).filter(([, riderId]) => riderId !== id),
+    );
+  } else {
+    if (state.routePrep.selectedIds.length >= 4) {
+      showToast("Routes can only field four riders at a time.");
+      return;
+    }
+    state.routePrep.selectedIds.push(id);
+  }
+
+  renderRoutePrep();
+  routePrepMetrics();
+  saveState();
+}
+
+function assignRouteRole(cardId, roleKey) {
+  if (!state.routePrep.selectedIds.includes(cardId)) {
+    showToast("Select that rider before assigning a role.");
+    return;
+  }
+
+  const currentHolder = state.routePrep.roles[roleKey];
+  if (currentHolder === cardId) {
+    delete state.routePrep.roles[roleKey];
+  } else {
+    state.routePrep.roles[roleKey] = cardId;
+  }
+
+  renderRoutePrep();
+  routePrepMetrics();
+  saveState();
+}
+
 function startRoute() {
-  if (!state.garage.length) {
-    showToast("Save at least one rider to launch a route.");
+  const riders = getPreparedRiders();
+  if (!riders.length) {
+    showToast("Select at least one rider in route prep first.");
     return;
   }
 
@@ -646,17 +878,29 @@ function startRoute() {
   }
 
   const district = DISTRICT_DIFFICULTY[ui.routeInput.value];
-  const totals = garageTotals();
-  const teamSize = state.garage.length;
+  const totals = preparedTotals(riders);
+  const teamSize = riders.length;
+  const lead = riders.find((rider) => state.routePrep.roles.lead === rider.id);
+  const scout = riders.find((rider) => state.routePrep.roles.scout === rider.id);
+  const tech = riders.find((rider) => state.routePrep.roles.tech === rider.id);
+  const cargo = riders.find((rider) => state.routePrep.roles.cargo === rider.id);
+  const roleBonus =
+    (lead ? lead.stats.speed + lead.stats.style * 0.5 : 0) +
+    (scout ? scout.stats.control + scout.stats.speed * 0.7 : 0) +
+    (tech ? tech.stats.tech * 1.7 : 0) +
+    (cargo ? cargo.stats.cargo * 1.6 + cargo.stats.power * 0.5 : 0);
+  const riskOffset = scout ? scout.stats.control * 0.03 : 0;
+  const payoutBonus = cargo ? cargo.stats.cargo * 0.04 : 0;
   const routeStrength =
     totals.speed * 1.2 +
     totals.control +
     totals.tech * 1.1 +
     totals.cargo * 0.9 +
     totals.style * 0.5 +
-    teamSize * 4;
+    teamSize * 4 +
+    roleBonus;
 
-  const threshold = district.risk * 48;
+  const threshold = Math.max(18, (district.risk - riskOffset) * 48);
   const successScore = routeStrength - threshold + Math.floor(Math.random() * 18);
   const routeLength = 5;
 
@@ -666,6 +910,14 @@ function startRoute() {
     routeLength,
     successScore,
     totals,
+    riders,
+    roles: {
+      lead,
+      scout,
+      tech,
+      cargo,
+    },
+    payoutBonus,
   };
 
   ui.routeProgressLabel.textContent = `Launching ${district.label}`;
@@ -674,11 +926,16 @@ function startRoute() {
   renderMetrics([
     { label: "Crew size", value: String(teamSize) },
     { label: "Projected route score", value: String(Math.round(routeStrength)) },
-    { label: "District risk", value: district.risk.toFixed(2) },
-    { label: "Base payout", value: `${district.credits} credits` },
+    { label: "Adjusted risk", value: Math.max(0.4, district.risk - riskOffset).toFixed(2) },
+    { label: "Role coverage", value: `${Object.keys(state.routePrep.roles).length} / 4` },
+    { label: "Base payout", value: `${Math.round(district.credits * (1 + payoutBonus))} credits` },
   ]);
 
-  addLog("Route launched", `${teamSize} riders deployed to ${district.label}.`, "success");
+  addLog(
+    "Route launched",
+    `${teamSize} riders deployed to ${district.label}. ${lead ? `${lead.name} is leading the push.` : "No lead rider assigned."}`,
+    "success",
+  );
 
   state.routeTimer = window.setInterval(tickRoute, 900);
 }
@@ -697,22 +954,28 @@ function tickRoute() {
     const stageEvents = [
       {
         title: "Traffic break",
-        text: `${route.district.label} grid shifted. ${randomItem(state.garage).name} found a faster lane.`,
+        text: `${route.district.label} grid shifted. ${(route.roles.scout ?? randomItem(route.riders)).name} found a faster lane.`,
         tone: "success",
       },
       {
         title: "Signal noise",
-        text: "Encrypted billboards scrambled route markers. Control and tech kept the crew steady.",
+        text: route.roles.tech
+          ? `${route.roles.tech.name} patched through encrypted billboards before the route broke apart.`
+          : "Encrypted billboards scrambled route markers. The crew had to steady the line manually.",
         tone: "warning",
       },
       {
         title: "Crowd spike",
-        text: "A street crowd closed half a corridor, forcing a sharp drift through service lanes.",
+        text: route.roles.lead
+          ? `${route.roles.lead.name} cut the pack through a crowd surge and kept momentum alive.`
+          : "A street crowd closed half a corridor, forcing a sharp drift through service lanes.",
         tone: "warning",
       },
       {
         title: "Charge window",
-        text: "Portable chargers were spotted mid-route, letting the boards push harder into the next block.",
+        text: route.roles.cargo
+          ? `${route.roles.cargo.name} kept the payload stable while the crew hit a portable charge window.`
+          : "Portable chargers were spotted mid-route, letting the boards push harder into the next block.",
         tone: "success",
       },
     ];
@@ -734,7 +997,12 @@ function finishRoute() {
   const success = route.successScore >= 18;
   const payout = Math.max(
     65,
-    Math.round(route.district.credits * (success ? 1.2 : 0.55) * (1 + state.garage.length * 0.05)),
+    Math.round(
+      route.district.credits *
+        (1 + route.payoutBonus) *
+        (success ? 1.2 : 0.55) *
+        (1 + route.riders.length * 0.05),
+    ),
   );
 
   ui.routeProgressLabel.textContent = success ? "Route complete" : "Route limped home";
@@ -745,14 +1013,14 @@ function finishRoute() {
     state.earnedCredits += payout;
     addLog(
       "Delivery secured",
-      `${route.district.label} paid out ${payout} credits. The crew beat district risk with style.`,
+      `${route.district.label} paid out ${payout} credits. ${(route.roles.cargo ?? route.roles.lead ?? route.riders[0]).name} was the standout rider.`,
       "success",
     );
   } else {
     state.earnedCredits += Math.round(payout * 0.5);
     addLog(
       "Rough landing",
-      `${route.district.label} fought back. The crew recovered partial cargo and banked ${Math.round(payout * 0.5)} credits.`,
+      `${route.district.label} fought back. ${(route.roles.tech ?? route.riders[0]).name} salvaged part of the run and banked ${Math.round(payout * 0.5)} credits.`,
       "danger",
     );
   }
@@ -767,6 +1035,7 @@ function finishRoute() {
   state.routeRun = null;
   ui.launchRouteButton.disabled = false;
   updateHeaderStats();
+  routePrepMetrics();
   saveState();
 }
 
@@ -775,7 +1044,10 @@ function removeFromGarage(id) {
   if (state.selectedGarageId === id) {
     state.selectedGarageId = state.garage[0]?.id ?? null;
   }
+  cleanRoutePrep();
   renderGarage();
+  renderRoutePrep();
+  routePrepMetrics();
   saveState();
 }
 
@@ -802,6 +1074,8 @@ function saveCurrentCard() {
     state.garage.splice(existingIndex, 1, clone);
     state.selectedGarageId = clone.id;
     renderGarage();
+    renderRoutePrep();
+    routePrepMetrics();
     saveState();
     showToast("Garage entry updated.");
     return;
@@ -815,6 +1089,8 @@ function saveCurrentCard() {
   state.garage.push(clone);
   state.selectedGarageId = clone.id;
   renderGarage();
+  renderRoutePrep();
+  routePrepMetrics();
   saveState();
   showToast("Rider saved to garage.");
 }
@@ -822,6 +1098,7 @@ function saveCurrentCard() {
 function clearGarage() {
   state.garage = [];
   state.selectedGarageId = null;
+  resetRoutePrep();
   renderGarage();
   saveState();
   showToast("Garage cleared.");
@@ -891,8 +1168,10 @@ function installEventListeners() {
   ui.copyJsonButton.addEventListener("click", copyCurrentCardJson);
   ui.saveCardButton.addEventListener("click", saveCurrentCard);
   ui.clearGarageButton.addEventListener("click", clearGarage);
+  ui.resetRoutePrepButton.addEventListener("click", resetRoutePrep);
   ui.launchRouteButton.addEventListener("click", startRoute);
   ui.clearLogButton.addEventListener("click", clearMissionLog);
+  ui.routeInput.addEventListener("change", routePrepMetrics);
 
   ui.garageList.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-action]");
@@ -908,10 +1187,26 @@ function installEventListeners() {
       loadGarageCard(id);
     }
   });
+
+  ui.routePrepList.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-route-action]");
+    if (!button) {
+      return;
+    }
+
+    const { routeAction, id, role } = button.dataset;
+    if (routeAction === "select" || routeAction === "remove") {
+      toggleRoutePrepSelection(id);
+    }
+    if (routeAction === "assign-role") {
+      assignRouteRole(id, role);
+    }
+  });
 }
 
 function boot() {
   loadState();
+  cleanRoutePrep();
   installEventListeners();
 
   if (state.currentCard) {
@@ -922,13 +1217,9 @@ function boot() {
   }
 
   renderGarage();
+  renderRoutePrep();
   renderMissionLog();
-  renderMetrics([
-    { label: "Crew size", value: "0" },
-    { label: "Projected route score", value: "0" },
-    { label: "District risk", value: "0.00" },
-    { label: "Base payout", value: "0 credits" },
-  ]);
+  routePrepMetrics();
   updateHeaderStats();
 }
 
