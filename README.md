@@ -17,8 +17,7 @@ If you do not want to run a local server, use the GitHub Actions workflow instea
 1. Open the repository on GitHub.
 2. Go to **Actions**.
 3. Run the **Deploy test drive** workflow, or push changes to `main` / `cursor/game-initial-files-ea73`.
-4. In repository settings, make sure **Pages** is set to **GitHub Actions** as the source.
-5. Open the deployed GitHub Pages URL for the repository.
+4. Open the deployed GitHub Pages URL for the repository.
 
 Quick links:
 
@@ -30,6 +29,9 @@ For this repository, the Pages URL will be:
 - `https://driver727-pixel.github.io/Skater-Punk/`
 
 Once deployed, that URL opens the test-drive mode directly in the browser.
+
+If the site was previously blank, rerun the workflow once. The workflow now switches the
+repository to GitHub Actions-based Pages deployment automatically before publishing.
 
 ## Design docs
 
