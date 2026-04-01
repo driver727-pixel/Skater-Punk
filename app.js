@@ -163,6 +163,56 @@ const JACKETS = [
   "patched mechanic coat",
 ];
 
+const SKIN_TONES = ["#f4d3bf", "#d9a57c", "#b77958", "#8b5a3c", "#5a3928"];
+const HAIR_COLORS = ["#dff4ff", "#ff78a8", "#8f7cff", "#47ffc5", "#f6cf54"];
+const HAIR_STYLES = ["buzz cut", "mohawk", "long wave", "braid crown", "undercut"];
+const VISOR_STYLES = ["none", "visor", "mask"];
+const BOARD_SHAPES = ["speed", "cruiser", "cargo"];
+const STANCES = ["lean silhouette", "forward stance", "low crouch", "wide drift pose"];
+
+const JACKET_COLORS = {
+  "reflective bomber": "#a1b6ff",
+  "signal cloak": "#8848ff",
+  "mesh street shell": "#24b7ff",
+  "chrome-panel vest": "#c8d4ea",
+  "patched mechanic coat": "#ff9e57",
+  "aerodynamic jacket": "#4be5ff",
+  "delivery sling": "#7d8cff",
+  "flare coat": "#ff5fc7",
+  "sticker bomb deck": "#48d2d9",
+  "shock-grip high tops": "#ffe16c",
+  "utility vest": "#b6ff7d",
+  "signal scanner": "#57d5ff",
+  "modded battery pack": "#6ef0c2",
+  "district visor": "#9a88ff",
+  "sensor scarf": "#53ffbb",
+  "low-profile board": "#89a6ff",
+  "cargo rig": "#ffbb66",
+  "wide deck": "#6fb7ff",
+  "reinforced pads": "#ffd36a",
+  "tool roll": "#ff8e68",
+  "patched bomber": "#ff7e99",
+  "shock wrench": "#80fff0",
+  "mirror visor": "#b8f1ff",
+  "mute tires": "#7f93a8",
+  "ghost weave coat": "#8f66ff",
+  "captain jacket": "#f461a8",
+  "crest deck": "#9ee8ff",
+  "command headset": "#ffe082",
+};
+
+const BOARD_COLORS = {
+  "narrow racing deck": "#52d7ff",
+  "split-tail cruiser": "#ff77a5",
+  "sparkline downhill board": "#ffd764",
+  "modded cargo deck": "#97ff6d",
+  "shock-rail street board": "#9d89ff",
+  "sticker bomb deck": "#ff7bca",
+  "low-profile board": "#78dfff",
+  "wide deck": "#ffa15b",
+  "crest deck": "#d2f6ff",
+};
+
 const DISTRICT_DIFFICULTY = {
   "ion-loop": { label: "Ion Loop", risk: 0.9, credits: 180 },
   "ghost-market": { label: "Ghost Market", risk: 1.15, credits: 220 },
@@ -184,6 +234,20 @@ const ui = {
   clearGarageButton: document.querySelector("#clear-garage"),
   cardPreview: document.querySelector("#card-preview"),
   cardArt: document.querySelector("#card-art"),
+  skaterVisual: document.querySelector("#skater-visual"),
+  skaterAura: document.querySelector("#skater-aura"),
+  skaterHair: document.querySelector("#skater-hair"),
+  skaterHead: document.querySelector("#skater-head"),
+  skaterVisor: document.querySelector("#skater-visor"),
+  skaterTorso: document.querySelector("#skater-torso"),
+  skaterArmLeft: document.querySelector("#skater-arm-left"),
+  skaterArmRight: document.querySelector("#skater-arm-right"),
+  skaterLegLeft: document.querySelector("#skater-leg-left"),
+  skaterLegRight: document.querySelector("#skater-leg-right"),
+  skaterBoard: document.querySelector("#skater-board"),
+  skaterDeck: document.querySelector("#skater-deck"),
+  skaterWheelFront: document.querySelector("#skater-wheel-front"),
+  skaterWheelRear: document.querySelector("#skater-wheel-rear"),
   cardName: document.querySelector("#card-name"),
   cardRarity: document.querySelector("#card-rarity"),
   cardCrew: document.querySelector("#card-crew"),
@@ -267,6 +331,12 @@ function buildVisual(archetype, vibe, accent) {
   const board = randomItem([...BOARD_TYPES, ...archetypeConfig.visuals]);
   const district = randomItem(vibeConfig.districts);
   const pose = randomItem(["lean silhouette", "forward stance", "low crouch", "wide drift pose"]);
+  const stance = randomItem(STANCES);
+  const hairStyle = randomItem(HAIR_STYLES);
+  const visor = randomItem(VISOR_STYLES);
+  const boardShape = board.includes("cargo") || board.includes("wide") ? "cargo" : (
+    board.includes("cruiser") ? "cruiser" : "speed"
+  );
 
   return {
     summary: `${pose}, ${jacket}, ${board}.`,
@@ -274,6 +344,16 @@ function buildVisual(archetype, vibe, accent) {
     energy: randomItem(["Voltglass", "Gridcell", "Night Current", "Sparkline"]),
     palette: [accent, vibeConfig.palettes[1], vibeConfig.palettes[2]],
     wheelGlow: accent,
+    skinTone: randomItem(SKIN_TONES),
+    hairColor: randomItem(HAIR_COLORS),
+    hairStyle,
+    visor,
+    jacket,
+    jacketColor: JACKET_COLORS[jacket] ?? accent,
+    board,
+    boardColor: BOARD_COLORS[board] ?? accent,
+    boardShape,
+    stance,
   };
 }
 
@@ -352,9 +432,36 @@ function renderStats(stats) {
   });
 }
 
+function renderSkaterVisual(card) {
+  const { visual } = card;
+  const boardWidth = visual.boardShape === "cargo" ? 156 : visual.boardShape === "cruiser" ? 142 : 132;
+  const boardOffset = visual.boardShape === "cargo" ? "12px" : "20px";
+
+  ui.skaterVisual.dataset.stance = visual.stance;
+  ui.skaterHair.dataset.style = visual.hairStyle;
+  ui.skaterVisor.dataset.style = visual.visor;
+  ui.skaterBoard.dataset.shape = visual.boardShape;
+
+  ui.skaterAura.style.background = `radial-gradient(circle, ${hexToRgba(visual.wheelGlow, 0.42)} 0%, transparent 72%)`;
+  ui.skaterHair.style.background = `linear-gradient(180deg, ${visual.hairColor}, ${hexToRgba(visual.hairColor, 0.45)})`;
+  ui.skaterHead.style.background = `linear-gradient(180deg, ${visual.skinTone}, ${hexToRgba(visual.skinTone, 0.62)})`;
+  ui.skaterVisor.style.background = `linear-gradient(90deg, ${hexToRgba(card.accent, 0.92)}, ${hexToRgba(visual.palette[1], 0.86)})`;
+  ui.skaterTorso.style.background = `linear-gradient(180deg, ${visual.jacketColor}, ${hexToRgba(visual.jacketColor, 0.48)})`;
+  ui.skaterArmLeft.style.background = `linear-gradient(180deg, ${visual.jacketColor}, ${hexToRgba(visual.jacketColor, 0.42)})`;
+  ui.skaterArmRight.style.background = `linear-gradient(180deg, ${visual.jacketColor}, ${hexToRgba(visual.jacketColor, 0.42)})`;
+  ui.skaterLegLeft.style.background = `linear-gradient(180deg, ${visual.palette[2]}, ${hexToRgba(visual.palette[2], 0.5)})`;
+  ui.skaterLegRight.style.background = `linear-gradient(180deg, ${visual.palette[2]}, ${hexToRgba(visual.palette[2], 0.5)})`;
+  ui.skaterDeck.style.background = `linear-gradient(90deg, ${visual.boardColor}, ${hexToRgba(card.accent, 0.78)})`;
+  ui.skaterDeck.style.width = `${boardWidth}px`;
+  ui.skaterDeck.style.left = boardOffset;
+  ui.skaterWheelFront.style.background = `radial-gradient(circle, ${visual.wheelGlow} 0 38%, rgba(255, 255, 255, 0.92) 39% 54%, ${hexToRgba(visual.wheelGlow, 0.18)} 55%)`;
+  ui.skaterWheelRear.style.background = `radial-gradient(circle, ${visual.wheelGlow} 0 38%, rgba(255, 255, 255, 0.92) 39% 54%, ${hexToRgba(visual.wheelGlow, 0.18)} 55%)`;
+}
+
 function renderCard(card) {
   state.currentCard = card;
   applyAccent(card);
+  renderSkaterVisual(card);
   ui.cardName.textContent = card.name;
   ui.cardRarity.textContent = card.rarity;
   ui.cardCrew.textContent = card.crew;
