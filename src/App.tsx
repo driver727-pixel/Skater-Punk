@@ -1,13 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CardForgeRoadmap } from "./features/card-forge/CardForgeRoadmap";
 import { createAdService } from "./game/ads";
+import { DISTRICT_CARDS, GARAGE_UPGRADES, ROUTES } from "./game/content";
 import {
-  DISTRICT_CARDS,
-  GARAGE_UPGRADES,
-  ROUTES,
-  createInitialState,
-} from "./game/content";
-import {
+  TICK_MS,
   advanceState,
   assignRoute,
   clearRoute,
@@ -15,13 +11,10 @@ import {
   getSquadSummary,
   rechargeSkater,
   repairSkater,
-  tickIntervalMs,
 } from "./game/simulation";
 import { loadState, saveState } from "./game/storage";
 import type { GameState, RouteDefinition, Screen, Skater } from "./game/types";
 import "./styles.css";
-
-const adService = createAdService();
 
 const formatProgress = (skater: Skater, route?: RouteDefinition) => {
   if (!route || !skater.routeId) {
@@ -159,23 +152,23 @@ function RiderCard({
 }
 
 function App() {
+  const adService = useRef(createAdService()).current;
   const [screen, setScreen] = useState<Screen>("map");
-  const [state, setState] = useState<GameState>(() => loadState() ?? createInitialState());
+  const [state, setState] = useState<GameState>(() => {
+    const initial = loadState();
+    return advanceState(initial);
+  });
   const [selectedSkaterId, setSelectedSkaterId] = useState<string>(
-    () => loadState()?.skaters[0]?.id ?? createInitialState().skaters[0].id,
+    () => loadState().skaters[0]?.id ?? "",
   );
   const [toast, setToast] = useState(
     "Rewarded boosts use a browser mock on web and can be replaced with a Google AdMob rewarded adapter on Android.",
   );
 
   useEffect(() => {
-    setState((current) => advanceState(current));
-  }, []);
-
-  useEffect(() => {
     const timer = window.setInterval(() => {
       setState((current) => advanceState(current));
-    }, tickIntervalMs);
+    }, TICK_MS);
 
     return () => window.clearInterval(timer);
   }, []);
@@ -188,7 +181,7 @@ function App() {
     if (!state.skaters.some((skater) => skater.id === selectedSkaterId)) {
       setSelectedSkaterId(state.skaters[0]?.id ?? "");
     }
-  }, [selectedSkaterId, state.skaters]);
+  }, [state.skaters]);
 
   const selectedSkater = useMemo(
     () => state.skaters.find((skater) => skater.id === selectedSkaterId) ?? state.skaters[0],
@@ -196,47 +189,53 @@ function App() {
   );
   const summary = useMemo(() => getSquadSummary(state), [state]);
 
-  const updateState = (nextState: GameState, message?: string) => {
+  const updateState = useCallback((nextState: GameState, message?: string) => {
     setState(advanceState(nextState));
     if (message) {
       setToast(message);
     }
-  };
+  }, []);
 
-  const handleAssignRoute = (routeId: string) => {
-    if (!selectedSkater) {
-      return;
-    }
-    const route = getRouteById(state.routes, routeId);
-    updateState(
-      assignRoute(state, selectedSkater.id, routeId),
-      route
-        ? `${selectedSkater.handle} is now looping ${route.name}. Progress continues from saved timestamps when the player returns.`
-        : undefined,
-    );
-  };
+  const handleAssignRoute = useCallback(
+    (routeId: string) => {
+      if (!selectedSkater) {
+        return;
+      }
+      const route = getRouteById(state.routes, routeId);
+      updateState(
+        assignRoute(state, selectedSkater.id, routeId),
+        route
+          ? `${selectedSkater.handle} is now looping ${route.name}. Progress continues from saved timestamps when the player returns.`
+          : undefined,
+      );
+    },
+    [selectedSkater, state, updateState],
+  );
 
-  const handleClearRoute = () => {
+  const handleClearRoute = useCallback(() => {
     if (!selectedSkater) {
       return;
     }
     updateState(clearRoute(state, selectedSkater.id));
-  };
+  }, [selectedSkater, state, updateState]);
 
-  const handleReward = async (skaterId: string, rewardType: "instant-recharge" | "emergency-repair") => {
-    const result = await adService.showRewardedAd(rewardType);
-    if (!result.granted) {
-      setToast("Rewarded ad was skipped. No boost granted.");
-      return;
-    }
+  const handleReward = useCallback(
+    async (skaterId: string, rewardType: "instant-recharge" | "emergency-repair") => {
+      const result = await adService.showRewardedAd(rewardType);
+      if (!result.granted) {
+        setToast("Rewarded ad was skipped. No boost granted.");
+        return;
+      }
 
-    const nextState =
-      rewardType === "instant-recharge"
-        ? rechargeSkater(state, skaterId, "rewarded-ad")
-        : repairSkater(state, skaterId);
+      const nextState =
+        rewardType === "instant-recharge"
+          ? rechargeSkater(state, skaterId, "rewarded-ad")
+          : repairSkater(state, skaterId);
 
-    updateState(nextState, result.detail);
-  };
+      updateState(nextState, result.detail);
+    },
+    [adService, state, updateState],
+  );
 
   const isForgeScreen = screen === "forge";
 
