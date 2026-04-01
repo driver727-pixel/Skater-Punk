@@ -953,6 +953,13 @@ input[type="color"] {
   padding: 16px;
 }
 
+.garage-card-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
 .garage-card.selected {
   border-color: rgba(0, 240, 255, 0.55);
 }
@@ -975,6 +982,39 @@ input[type="color"] {
 
 .garage-meta {
   margin-top: 10px;
+}
+
+.garage-card .mini-portrait {
+  width: 90px;
+  height: 98px;
+  margin-top: 4px;
+}
+
+.garage-card .mini-portrait .visual-aura {
+  width: 70px;
+  height: 70px;
+  right: 10px;
+  bottom: 14px;
+}
+
+.garage-card .mini-portrait .avatar-figure {
+  width: 66px;
+  height: 78px;
+  right: 9px;
+  bottom: 10px;
+}
+
+.garage-card .mini-portrait .avatar-board {
+  width: 58px;
+  bottom: 5px;
+}
+
+.garage-card .mini-portrait .avatar-wheel.left {
+  left: 10px;
+}
+
+.garage-card .mini-portrait .avatar-wheel.right {
+  right: 10px;
 }
 
 .mini-stats {
@@ -1141,6 +1181,10 @@ input[type="color"] {
   .art-copy {
     max-width: 100%;
     padding-right: 110px;
+  }
+
+  .garage-card-body {
+    grid-template-columns: 1fr;
   }
 
   .skater-visual {

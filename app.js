@@ -488,6 +488,51 @@ function renderSkaterVisual(card) {
   ui.skaterWheelRear.style.background = `radial-gradient(circle, ${visual.wheelGlow} 0 38%, rgba(255, 255, 255, 0.92) 39% 54%, ${hexToRgba(visual.wheelGlow, 0.18)} 55%)`;
 }
 
+function renderMiniPortrait(card, className = "mini-portrait") {
+  const { visual, accent } = card;
+  const boardWidth = visual.boardShape === "cargo" ? 56 : visual.boardShape === "cruiser" ? 52 : 48;
+  const boardOffset = visual.boardShape === "cargo" ? 2 : 4;
+  const visorOpacity = visual.visor === "none" ? 0 : 0.9;
+  const riderTransform =
+    visual.stance === "push"
+      ? "skewX(-4deg)"
+      : visual.stance === "crouch"
+        ? "translateY(4px) scaleY(0.92)"
+        : "none";
+  const boardTransform = visual.stance === "drift" ? "rotate(-15deg) translateX(-2px)" : "rotate(-9deg)";
+  const hairStyle =
+    visual.hairStyle === "buzz"
+      ? "height: 18px; top: 6px;"
+      : visual.hairStyle === "hawk"
+        ? "left: 24px; width: 12px; height: 30px; border-radius: 10px 10px 6px 6px;"
+        : visual.hairStyle === "bob"
+          ? "width: 36px; height: 34px;"
+          : "top: 4px; height: 20px;";
+
+  return `
+    <div class="${className}" data-stance="${visual.stance}" data-hair="${visual.hairStyle}" data-visor="${visual.visor}">
+      <div class="visual-aura" style="background: radial-gradient(circle, ${hexToRgba(visual.wheelGlow, 0.42)} 0%, transparent 72%);"></div>
+      <div class="avatar-figure" style="transform: ${riderTransform};">
+        <div class="avatar-shadow"></div>
+        <div class="avatar-board" style="transform: ${boardTransform};">
+          <div class="avatar-deck" style="background: linear-gradient(90deg, ${visual.boardColor}, ${hexToRgba(accent, 0.78)}); width: ${boardWidth}px; left: ${boardOffset}px;"></div>
+          <div class="avatar-wheel left" style="background: radial-gradient(circle, ${visual.wheelGlow} 0 38%, rgba(255, 255, 255, 0.92) 39% 54%, ${hexToRgba(visual.wheelGlow, 0.18)} 55%);"></div>
+          <div class="avatar-wheel right" style="background: radial-gradient(circle, ${visual.wheelGlow} 0 38%, rgba(255, 255, 255, 0.92) 39% 54%, ${hexToRgba(visual.wheelGlow, 0.18)} 55%);"></div>
+        </div>
+        <div class="avatar-leg back" style="background: linear-gradient(180deg, ${visual.palette[2]}, ${hexToRgba(visual.palette[2], 0.5)});"></div>
+        <div class="avatar-leg front" style="background: linear-gradient(180deg, ${visual.palette[2]}, ${hexToRgba(visual.palette[2], 0.5)});"></div>
+        <div class="avatar-torso" style="background: linear-gradient(180deg, ${visual.jacketColor}, ${hexToRgba(visual.jacketColor, 0.48)});"></div>
+        <div class="avatar-arm left" style="background: linear-gradient(180deg, ${visual.jacketColor}, ${hexToRgba(visual.jacketColor, 0.42)});"></div>
+        <div class="avatar-arm right" style="background: linear-gradient(180deg, ${visual.jacketColor}, ${hexToRgba(visual.jacketColor, 0.42)});"></div>
+        <div class="avatar-neck" style="background: ${visual.skinTone};"></div>
+        <div class="avatar-head" style="background: linear-gradient(180deg, ${visual.skinTone}, ${hexToRgba(visual.skinTone, 0.62)});"></div>
+        <div class="avatar-hair" style="background: linear-gradient(180deg, ${visual.hairColor}, ${hexToRgba(visual.hairColor, 0.45)}); ${hairStyle}"></div>
+        <div class="avatar-visor" style="opacity: ${visorOpacity}; background: linear-gradient(90deg, ${hexToRgba(accent, 0.92)}, ${hexToRgba(visual.palette[1], 0.86)});"></div>
+      </div>
+    </div>
+  `;
+}
+
 function renderCard(card) {
   state.currentCard = card;
   applyAccent(card);
@@ -525,6 +570,7 @@ function renderGarage() {
     wrapper.className = `garage-card ${state.selectedGarageId === card.id ? "selected" : ""}`;
     wrapper.innerHTML = `
       <div class="garage-header">
+        ${renderMiniPortrait(card, "garage-portrait")}
         <div>
           <span class="garage-tag">${card.rarity} ${card.archetype}</span>
           <h3>${card.name}</h3>
