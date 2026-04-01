@@ -1,4 +1,4 @@
-name: Deploy test drive
+name: Build test drive package
 
 on:
   workflow_dispatch:
@@ -14,46 +14,64 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: test-drive-pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  package:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Enable Pages for workflow deployments
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Build self-contained test drive
         run: |
-          gh api \
-            --method PUT \
-            -H "Accept: application/vnd.github+json" \
-            "/repos/${GITHUB_REPOSITORY}/pages" \
-            -f build_type=workflow
+          mkdir -p _test_drive
+          python3 - <<'PY'
+          from pathlib import Path
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
+          html = Path("index.html").read_text()
+          css = Path("styles.css").read_text()
+          js = Path("app.js").read_text()
 
-      - name: Prepare static site
+          html = html.replace(
+              '<link rel="stylesheet" href="styles.css" />',
+              f"<style>\n{css}\n</style>",
+          )
+          html = html.replace(
+              '<script src="app.js"></script>',
+              f"<script>\n{js}\n</script>",
+          )
+
+          Path("_test_drive/test-drive.html").write_text(html)
+          Path("_test_drive/index.html").write_text(Path("index.html").read_text())
+          Path("_test_drive/styles.css").write_text(css)
+          Path("_test_drive/app.js").write_text(js)
+          PY
+
+      - name: Create zip package
         run: |
-          mkdir -p _site
-          cp index.html styles.css app.js _site/
+          cd _test_drive
+          zip -r ../skater-punk-test-drive.zip .
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload test drive artifact
+        uses: actions/upload-artifact@v4
         with:
-          path: _site
+          name: skater-punk-test-drive
+          path: |
+            _test_drive
+            skater-punk-test-drive.zip
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish run summary
+        run: |
+          {
+            echo "## Test drive package ready"
+            echo
+            echo "Download the **skater-punk-test-drive** artifact from this run."
+            echo
+            echo "Then unzip it and open **test-drive.html** in your browser."
+            echo
+            echo "No local Python server or GitHub Pages setup is required."
+          } >> "$GITHUB_STEP_SUMMARY"
