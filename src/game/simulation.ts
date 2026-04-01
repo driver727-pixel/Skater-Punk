@@ -1,6 +1,7 @@
 import type { GameState, RouteDefinition, Skater, SquadSummary } from "./types";
 
 export const TICK_MS = 30_000;
+
 const MAX_OFFLINE_MS = 1000 * 60 * 60 * 24;
 
 const clamp = (value: number, min: number, max: number) =>
@@ -218,5 +219,3 @@ export const getSquadSummary = (state: GameState): SquadSummary => ({
   activeRoutes: state.skaters.filter((skater) => !!skater.routeId).length,
   rewardedRecharges: state.monetization.rewardedRechargeCount,
 });
-
-export const tickIntervalMs = TICK_MS;
