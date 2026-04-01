@@ -1,4 +1,4 @@
-export type Screen = "map" | "cards" | "garage";
+export type Screen = "map" | "cards" | "garage" | "forge";
 
 export type RewardType = "instant-recharge" | "emergency-repair";
 
