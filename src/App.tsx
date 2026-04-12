@@ -245,11 +245,11 @@ function App() {
     <div className="app-shell">
       <header className="panel hero">
         <div>
-          <p className="eyebrow">Skater-Punk Platform</p>
+          <p className="eyebrow">Skater-Punk — an SP Digital LLC property</p>
           <h1>Cyberpunk skateboard games and tools, all in one hub.</h1>
           <p>
-            Skater-Punk hosts a growing collection of games and apps set in a neon-lit courier
-            universe. Start with{" "}
+            Skater-Punk is a creative IP universe of neon-lit courier districts, electric
+            skateboarders, and collectible card systems. Start with{" "}
             <button className="inline-link" onClick={() => setScreen("forge")}>
               Punchskater
             </button>

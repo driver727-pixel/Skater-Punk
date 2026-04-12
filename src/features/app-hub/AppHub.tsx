@@ -1,4 +1,4 @@
-import { PLATFORM_APPS } from "./registry";
+import { SKATER_PUNK_APPS, SP_DIGITAL_APPS } from "./registry";
 import type { PlatformApp } from "./types";
 
 interface AppHubProps {
@@ -12,6 +12,8 @@ function AppTile({
   app: PlatformApp;
   onLaunch: () => void;
 }) {
+  const isExternal = app.kind === "external";
+
   return (
     <article
       className="panel app-tile"
@@ -45,17 +47,33 @@ function AppTile({
       )}
 
       <div className="route-actions">
-        <button
-          disabled={app.status !== "live"}
-          onClick={onLaunch}
-          style={
-            app.status === "live"
-              ? { backgroundColor: app.accentColor, color: "#0a0e17" }
-              : undefined
-          }
-        >
-          {app.status === "live" ? `Launch ${app.name}` : "In development"}
-        </button>
+        {isExternal ? (
+          <a
+            className="app-tile-link-button"
+            href={app.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={
+              app.status === "live"
+                ? { backgroundColor: app.accentColor, color: "#0a0e17" }
+                : undefined
+            }
+          >
+            Visit {app.name} ↗
+          </a>
+        ) : (
+          <button
+            disabled={app.status !== "live"}
+            onClick={onLaunch}
+            style={
+              app.status === "live"
+                ? { backgroundColor: app.accentColor, color: "#0a0e17" }
+                : undefined
+            }
+          >
+            {app.status === "live" ? `Launch ${app.name}` : "In development"}
+          </button>
+        )}
       </div>
     </article>
   );
@@ -64,36 +82,69 @@ function AppTile({
 export function AppHub({ onLaunchApp }: AppHubProps) {
   return (
     <>
+      {/* ── Skater-Punk Universe ──────────────────── */}
       <div className="section-heading">
-        <h2>Games &amp; Apps</h2>
+        <h2>Skater-Punk Universe</h2>
         <p>
-          Skater-Punk is a platform for cyberpunk skateboard games and tools.
-          Launch an app below to get started.
+          Games and apps set inside the Skater-Punk IP — a neon-lit cyberpunk
+          courier world of electric skateboarders, districts, and crews.
         </p>
       </div>
 
       <div className="app-hub-grid">
-        {PLATFORM_APPS.map((app) => (
+        {SKATER_PUNK_APPS.map((app) => (
           <AppTile
             key={app.id}
             app={app}
-            onLaunch={() => onLaunchApp(app.screen)}
+            onLaunch={() =>
+              app.kind === "internal" ? onLaunchApp(app.screen) : undefined
+            }
           />
         ))}
       </div>
 
+      {/* ── SP Digital LLC ────────────────────────── */}
+      {SP_DIGITAL_APPS.length > 0 && (
+        <>
+          <div className="section-heading hub-section-divider">
+            <h2>More from SP Digital LLC</h2>
+            <p>
+              Other apps and tools by SP Digital LLC that live outside the
+              Skater-Punk universe.
+            </p>
+          </div>
+
+          <div className="app-hub-grid">
+            {SP_DIGITAL_APPS.map((app) => (
+              <AppTile
+                key={app.id}
+                app={app}
+                onLaunch={() =>
+                  app.kind === "internal" ? onLaunchApp(app.screen) : undefined
+                }
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ── Platform roadmap ──────────────────────── */}
       <article className="panel integration-panel">
         <div className="section-heading">
           <h2>Platform roadmap</h2>
           <p>
-            More games and tools are in development. Each app shares the
-            Skater-Punk universe, card system, and data contracts.
+            More games and tools are in development across the Skater-Punk IP
+            and SP Digital LLC.
           </p>
         </div>
         <ul className="economy-list">
           <li>
             <strong>Punchskater</strong> — card creation tool for building
             cyberpunk courier decks. <em>Live now.</em>
+          </li>
+          <li>
+            <strong>Craftlingua</strong> — language learning through craft, by
+            SP Digital LLC. <em>Live at craftlingua.app.</em>
           </li>
           <li>
             <strong>Courier dispatch</strong> — automated route simulation with

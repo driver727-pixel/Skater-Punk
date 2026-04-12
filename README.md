@@ -1,14 +1,16 @@
 # Skater-Punk Platform
 
-Skater-Punk is a hub for **cyberpunk skateboard games and tools**.
+Skater-Punk is a creative IP universe — an **SP Digital LLC** property — for cyberpunk skateboard games and tools.
 
-Each hosted app shares the same neon-lit courier universe, card system, and data contracts. The platform is designed so new games and apps can be added over time.
+Each hosted app within the Skater-Punk universe shares the same neon-lit courier world, card system, and data contracts. The hub also links to other SP Digital LLC products that live outside the Skater-Punk IP.
 
 ## Hosted Apps
 
-### Punchskater — [punchskater.com](https://punchskater.com)
+### Skater-Punk Universe
 
-The first app on the platform. Punchskater is a **card creation tool** for building cyberpunk electric-skateboard courier decks.
+#### Punchskater — [punchskater.com](https://punchskater.com)
+
+The first app inside the Skater-Punk IP. Punchskater is a **card creation tool** for building cyberpunk electric-skateboard courier decks.
 
 A player can:
 
@@ -18,9 +20,15 @@ A player can:
 - assemble cards into named decks
 - export individual cards or full decks as JSON for a future game project
 
-### Courier Dispatch
+#### Courier Dispatch
 
 The core gameplay loop: a garage of skateboard couriers, user-selected automated routes, offline progression, and rewarded ad boosts designed for Google AdMob on Android.
+
+### More from SP Digital LLC
+
+#### Craftlingua — [craftlingua.app](https://craftlingua.app)
+
+An SP Digital LLC app for hands-on language learning. Craftlingua lives outside the Skater-Punk universe but shares the same creative studio.
 
 ## What the platform uses
 
