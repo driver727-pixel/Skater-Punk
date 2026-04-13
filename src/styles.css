@@ -76,6 +76,33 @@ input::placeholder {
   padding: 1.5rem 1rem 3rem;
 }
 
+.placeholder-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-card {
+  width: min(100%, 720px);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  display: grid;
+  gap: 1.5rem;
+}
+
+.placeholder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.placeholder-link {
+  text-decoration: none;
+  background: linear-gradient(135deg, #19f2ff, #a63cff);
+  color: #090611;
+}
+
 .panel {
   background: rgba(15, 14, 31, 0.82);
   border: 1px solid rgba(25, 242, 255, 0.14);
