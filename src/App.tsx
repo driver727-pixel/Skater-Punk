@@ -5,6 +5,8 @@ const slideshowImages = [
   "https://github.com/user-attachments/assets/1295eb80-65f3-4db9-812e-6b6704919b0f",
   "https://github.com/user-attachments/assets/74a660b5-5b53-4c01-9ebb-d28c3b21667a",
   "https://github.com/user-attachments/assets/5f88e377-d084-48e6-9766-2aa4be7e53df",
+  "/Skateboards in space.png",
+  "/Skateboards in space2.png",
 ];
 
 function App() {
