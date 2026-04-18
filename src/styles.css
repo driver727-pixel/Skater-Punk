@@ -106,8 +106,8 @@ input::placeholder {
   opacity: 0;
   transform: scale(1.08) translate3d(0, 0, 0);
   animation:
-    placeholder-fade 32s infinite,
-    placeholder-pan 32s ease-in-out infinite;
+    placeholder-fade 48s infinite,
+    placeholder-pan 48s ease-in-out infinite;
 }
 
 .placeholder-backdrop {
